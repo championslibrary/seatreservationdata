@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Seat Reservation Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .box {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    #reader {
+      width: 100%;
+    }
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h3>Scan Seat QR</h3>
+    <div id="reader"></div>
+    <div class="status" id="status">Waiting for scan...</div>
+  </div>
+
+<script>
+  const API_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+  function onScanSuccess(decodedText) {
+    document.getElementById("status").innerText = "Processing...";
+
+    fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "qrdata=" + encodeURIComponent(decodedText)
+    })
+    .then(res => res.text())
+    .then(res => {
+      document.getElementById("status").innerText = "✅ Seat Logged Successfully";
+    })
+    .catch(err => {
+      document.getElementById("status").innerText = "❌ Error saving data";
+    });
+  }
+
+  new Html5Qrcode("reader").start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+  );
+</script>
+</body>
+</html>
