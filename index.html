@@ -91,7 +91,7 @@
     <!-- CONTENT -->
     <div class="content">
       <div class="box">
-        <h3>Scan Seat QR</h3>
+        <h3>Scan QR To Update Seat Reservation Data</h3>
         <div id="reader"></div>
         <div class="status" id="status">Scan Seat QR First</div>
       </div>
@@ -145,7 +145,7 @@
     if (decodedText.startsWith("Seat:") && !decodedText.includes("|")) {
       lockedSeat = decodedText.split(":")[1].trim().toUpperCase();
       document.getElementById("status").innerText =
-        `Seat Number: ${lockedSeat} locked\nNow Scan Reservation Tag`;
+        `Seat Number: ${lockedSeat} Locked\nNow Scan Reservation Tag`;
       beep(600);
       disableScanTemporarily();
       return;
