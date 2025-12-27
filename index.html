@@ -45,10 +45,27 @@
     font-family: Arial, sans-serif;
     z-index: 999;
   }
+    .header {
+    width: 100%;
+    background: #ffd400;
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .header img {
+    max-width: 100%;
+    height: auto;
+    max-height: 90px;
+    object-fit: contain;
+  }
   </style>
 </head>
 
 <body>
+  <div class="header">
+  <img src="logo.png" alt="Champion's Library Logo">
+  </div>
+
   <div class="box">
     <h3>Scan Seat QR</h3>
     <div id="reader"></div>
