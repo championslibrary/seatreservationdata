@@ -85,6 +85,14 @@
       scanDisabled = false;
     }, 5000); // 5 seconds delay
   }
+  
+  function resetToScanSeat() {
+  setTimeout(() => {
+    document.getElementById("status").innerText = "Scan Seat QR";
+    lockedSeat = null;
+  }, 2000); // 2 seconds
+}
+
 
   function onScanSuccess(decodedText) {
     if (scanDisabled) return;
@@ -137,6 +145,8 @@
         "Seat Verification Failed";
       beep(200, 0.4);
       lockedSeat = null;
+      resetToScanSeat();
+
       disableScanTemporarily();
       return;
     }
@@ -147,6 +157,8 @@
     document.getElementById("status").innerText =
       "Seat Verified & Logged In";
     beep(900);
+    resetToScanSeat();
+
 
     fetch(API_URL, {
       method: "POST",
