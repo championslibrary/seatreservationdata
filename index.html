@@ -64,23 +64,34 @@
 
   function disableScanTemporarily() {
     scanDisabled = true;
-    setTimeout(() => (scanDisabled = false), 5000); // 5 sec human delay
+    setTimeout(() => {
+      scanDisabled = false;
+    }, 5000); // 5 seconds delay
   }
 
   function onScanSuccess(decodedText) {
     if (scanDisabled) return;
 
-    // STEP 1: SEAT QR
+    // 🔥 IMPORTANT FIX (handles hidden spaces, encoding issues)
+    decodedText = decodedText.trim();
+
+    // =====================
+    // STEP 1: SEAT QR SCAN
+    // =====================
     if (decodedText.startsWith("Seat:") && !decodedText.includes("|")) {
-      lockedSeat = decodedText.split(":")[1];
+      lockedSeat = decodedText.split(":")[1].trim().toUpperCase();
+
       document.getElementById("status").innerText =
         `Scan Seat QR\nSeat Number: ${lockedSeat} locked\nNow scan Reservation Tag`;
+
       beep(600);
       disableScanTemporarily();
       return;
     }
 
+    // =====================
     // TAG SCANNED BEFORE SEAT
+    // =====================
     if (!lockedSeat) {
       document.getElementById("status").innerText =
         "Scan Seat QR first";
@@ -89,16 +100,22 @@
       return;
     }
 
-    // STEP 2: RESERVATION TAG
+    // =====================
+    // STEP 2: RESERVATION TAG QR
+    // =====================
     const parts = decodedText.split("|");
     let tagSeat = "";
 
     parts.forEach(p => {
       const [k, v] = p.split(":");
-      if (k === "Seat") tagSeat = v;
+      if (k === "Seat") {
+        tagSeat = v.trim().toUpperCase();
+      }
     });
 
-    // SEAT MISMATCH
+    // =====================
+    // SEAT VERIFICATION FAILED
+    // =====================
     if (tagSeat !== lockedSeat) {
       document.getElementById("status").innerText =
         "Seat Verification Failed";
@@ -108,14 +125,18 @@
       return;
     }
 
-    // SUCCESS
+    // =====================
+    // VERIFIED SUCCESS
+    // =====================
     document.getElementById("status").innerText =
       "Seat Verified & Logged In";
     beep(900);
 
     fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
       body: "qrdata=" + encodeURIComponent(decodedText)
     });
 
