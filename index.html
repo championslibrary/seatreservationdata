@@ -81,6 +81,51 @@
 </head>
 
 <body>
+  <div id="loginScreen" style="
+  position: fixed;
+  inset: 0;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+">
+  <div style="
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 320px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  ">
+    <h3>Staff Access</h3>
+    <input
+      type="password"
+      id="passwordInput"
+      placeholder="Enter Password"
+      style="
+        width: 100%;
+        padding: 10px;
+        margin: 15px 0;
+        font-size: 16px;
+      "
+    />
+    <button onclick="checkPassword()" style="
+      width: 100%;
+      padding: 10px;
+      background: #ffd400;
+      border: none;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+    ">
+      Unlock Scanner
+    </button>
+    <div id="loginError" style="color:red;margin-top:10px;"></div>
+  </div>
+  </div>
+
   <div class="app">
 
     <!-- HEADER -->
@@ -103,6 +148,18 @@
     </div>
 
   </div>
+<script>
+  const ACCESS_PASSWORD = "CLS@2025"; // 🔴 CHANGE THIS
+
+  function checkPassword() {
+    const input = document.getElementById("passwordInput").value;
+    if (input === ACCESS_PASSWORD) {
+      document.getElementById("loginScreen").style.display = "none";
+    } else {
+      document.getElementById("loginError").innerText = "Wrong password";
+    }
+  }
+</script>
 
 <script>
   const API_URL =
