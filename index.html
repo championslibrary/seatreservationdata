@@ -44,11 +44,11 @@
   </div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyOTQRBWHrwWr1VzS4rtLlK45BI02PE_yxUyEd02gmDa6SlGYw-A-xs5hM-VcZozPOv/exec";
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbyOTQRBWHrwWr1VzS4rtLlK45BI02PE_yxUyEd02gmDa6SlGYw-A-xs5hM-VcZozPOv/exec";
 
   let lockedSeat = null;
-  const scanCache = {};
-  const BLOCK_TIME = 3 * 60 * 1000;
+  let scanDisabled = false;
 
   function beep(freq = 800, dur = 0.15) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -62,36 +62,34 @@
     o.stop(ctx.currentTime + dur);
   }
 
+  function disableScanTemporarily() {
+    scanDisabled = true;
+    setTimeout(() => (scanDisabled = false), 5000); // 5 sec human delay
+  }
+
   function onScanSuccess(decodedText) {
-    const now = Date.now();
+    if (scanDisabled) return;
 
-    // duplicate protection
-    if (scanCache[decodedText] && (now - scanCache[decodedText]) < BLOCK_TIME) {
-      document.getElementById("status").innerText =
-        "⏳ Already scanned. Wait 3 minutes.";
-      beep(300, 0.3);
-      return;
-    }
-
-    scanCache[decodedText] = now;
-
-    // CASE 1: Seat QR
+    // STEP 1: SEAT QR
     if (decodedText.startsWith("Seat:") && !decodedText.includes("|")) {
       lockedSeat = decodedText.split(":")[1];
       document.getElementById("status").innerText =
-        "🪑 Seat locked: " + lockedSeat;
-      beep(600, 0.1);
+        `Scan Seat QR\nSeat Number: ${lockedSeat} locked\nNow scan Reservation Tag`;
+      beep(600);
+      disableScanTemporarily();
       return;
     }
 
-    // CASE 2: Tag QR
+    // TAG SCANNED BEFORE SEAT
     if (!lockedSeat) {
       document.getElementById("status").innerText =
-        "❗ Scan seat QR first";
+        "Scan Seat QR first";
       beep(250, 0.3);
+      disableScanTemporarily();
       return;
     }
 
+    // STEP 2: RESERVATION TAG
     const parts = decodedText.split("|");
     let tagSeat = "";
 
@@ -100,18 +98,20 @@
       if (k === "Seat") tagSeat = v;
     });
 
+    // SEAT MISMATCH
     if (tagSeat !== lockedSeat) {
       document.getElementById("status").innerText =
-        `❌ Seat mismatch! Tag is ${tagSeat}, scanned on ${lockedSeat}`;
+        "Seat Verification Failed";
       beep(200, 0.4);
-      lockedSeat = null; // reset
+      lockedSeat = null;
+      disableScanTemporarily();
       return;
     }
 
-    // SUCCESS → send to backend
+    // SUCCESS
     document.getElementById("status").innerText =
-      "✅ Seat verified & logged";
-    beep(900, 0.15);
+      "Seat Verified & Logged In";
+    beep(900);
 
     fetch(API_URL, {
       method: "POST",
@@ -119,7 +119,8 @@
       body: "qrdata=" + encodeURIComponent(decodedText)
     });
 
-    lockedSeat = null; // reset after success
+    lockedSeat = null;
+    disableScanTemporarily();
   }
 
   new Html5Qrcode("reader").start(
@@ -128,6 +129,5 @@
     onScanSuccess
   );
 </script>
-
 </body>
 </html>
