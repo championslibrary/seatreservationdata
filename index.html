@@ -9,73 +9,100 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       background: #f5f7fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       margin: 0;
     }
+
+    /* APP WRAPPER */
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .header {
+      background: #ffd400;
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .header img {
+      max-height: 80px;
+      width: auto;
+    }
+
+    /* MAIN CONTENT */
+    .content {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 20px 10px;
+    }
+
     .box {
       background: #fff;
       padding: 20px;
-      border-radius: 10px;
-      width: 320px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 360px;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
+
     #reader {
       width: 100%;
+      border-radius: 10px;
+      overflow: hidden;
     }
+
     .status {
-      margin-top: 10px;
+      margin-top: 12px;
       font-weight: bold;
+      font-size: 16px;
+      white-space: pre-line;
     }
 
+    /* FOOTER */
     #footer {
-    position: fixed;
-    bottom: 8px;
-    width: 100%;
-    text-align: center;
-    font-size: 12px;
-    color: #666;
-    opacity: 0.8;
-    font-family: Arial, sans-serif;
-    z-index: 999;
-  }
-    .header {
-    width: 100%;
-    background: #ffd400;
-    padding: 12px 8px;
-    text-align: center;
-  }
-
-  .header img {
-    max-width: 100%;
-    height: auto;
-    max-height: 90px;
-    object-fit: contain;
-  }
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      opacity: 0.8;
+      padding: 10px 0;
+    }
   </style>
 </head>
 
 <body>
-  <div class="header">
-  <img src="logo.png" alt="Champion's Library Logo">
-  </div>
+  <div class="app">
 
-  <div class="box">
-    <h3>Scan Seat QR</h3>
-    <div id="reader"></div>
-    <div class="status" id="status">Scan Seat QR First</div>
-  </div>
+    <!-- HEADER -->
+    <div class="header">
+      <img src="logo.png" alt="Champion's Library Logo">
+    </div>
 
-  <div id="footer">
-  Developed By <strong>Warrior Junaid Technologies</strong>
-  </div>
+    <!-- CONTENT -->
+    <div class="content">
+      <div class="box">
+        <h3>Scan Seat QR</h3>
+        <div id="reader"></div>
+        <div class="status" id="status">Scan Seat QR First</div>
+      </div>
+    </div>
 
+    <!-- FOOTER -->
+    <div id="footer">
+      Developed By <strong>Warrior Junaid Technologies</strong>
+    </div>
+
+  </div>
 
 <script>
   const API_URL =
@@ -100,39 +127,30 @@
     scanDisabled = true;
     setTimeout(() => {
       scanDisabled = false;
-    }, 5000); // 5 seconds delay
+    }, 5000);
   }
-  
-  function resetToScanSeat() {
-  setTimeout(() => {
-    document.getElementById("status").innerText = "Scan Seat QR";
-    lockedSeat = null;
-  }, 2000); // 2 seconds
-}
 
+  function resetToScanSeat() {
+    setTimeout(() => {
+      document.getElementById("status").innerText = "Scan Seat QR";
+      lockedSeat = null;
+    }, 2000);
+  }
 
   function onScanSuccess(decodedText) {
     if (scanDisabled) return;
 
-    // 🔥 IMPORTANT FIX (handles hidden spaces, encoding issues)
     decodedText = decodeURIComponent(decodedText).trim();
-    // =====================
-    // STEP 1: SEAT QR SCAN
-    // =====================
+
     if (decodedText.startsWith("Seat:") && !decodedText.includes("|")) {
       lockedSeat = decodedText.split(":")[1].trim().toUpperCase();
-
       document.getElementById("status").innerText =
         `Seat Number: ${lockedSeat} locked\nNow Scan Reservation Tag`;
-
       beep(600);
       disableScanTemporarily();
       return;
     }
 
-    // =====================
-    // TAG SCANNED BEFORE SEAT
-    // =====================
     if (!lockedSeat) {
       document.getElementById("status").innerText =
         "Scan Seat QR First";
@@ -141,41 +159,28 @@
       return;
     }
 
-    // =====================
-    // STEP 2: RESERVATION TAG QR
-    // =====================
     const parts = decodedText.split("|");
     let tagSeat = "";
 
     parts.forEach(p => {
       const [k, v] = p.split(":");
-      if (k === "Seat") {
-        tagSeat = v.trim().toUpperCase();
-      }
+      if (k === "Seat") tagSeat = v.trim().toUpperCase();
     });
 
-    // =====================
-    // SEAT VERIFICATION FAILED
-    // =====================
     if (tagSeat !== lockedSeat) {
       document.getElementById("status").innerText =
         "Seat Verification Failed";
       beep(200, 0.4);
       lockedSeat = null;
       resetToScanSeat();
-
       disableScanTemporarily();
       return;
     }
 
-    // =====================
-    // VERIFIED SUCCESS
-    // =====================
     document.getElementById("status").innerText =
       "Seat Verified & Logged In";
     beep(900);
     resetToScanSeat();
-
 
     fetch(API_URL, {
       method: "POST",
@@ -195,5 +200,6 @@
     onScanSuccess
   );
 </script>
+
 </body>
 </html>
