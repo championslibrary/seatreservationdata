@@ -99,7 +99,7 @@
     text-align: center;
     box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   ">
-    <h3>Staff Access</h3>
+    <h3>Access Restricted</h3>
     <input
       type="password"
       id="passwordInput"
@@ -156,7 +156,7 @@
     if (input === ACCESS_PASSWORD) {
       document.getElementById("loginScreen").style.display = "none";
     } else {
-      document.getElementById("loginError").innerText = "Wrong password";
+      document.getElementById("loginError").innerText = "Wrong Password";
     }
   }
 </script>
