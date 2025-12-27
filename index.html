@@ -46,59 +46,80 @@
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbyOTQRBWHrwWr1VzS4rtLlK45BI02PE_yxUyEd02gmDa6SlGYw-A-xs5hM-VcZozPOv/exec";
 
-  // store last scan time for each QR
+  let lockedSeat = null;
   const scanCache = {};
-  const BLOCK_TIME = 3 * 60 * 1000; // 3 minutes in ms
+  const BLOCK_TIME = 3 * 60 * 1000;
 
-  // simple beep using Web Audio API
-  function beep() {
+  function beep(freq = 800, dur = 0.15) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(800, ctx.currentTime);
-    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
-
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    oscillator.start();
-    oscillator.stop(ctx.currentTime + 0.15);
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = freq;
+    g.gain.value = 0.25;
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.start();
+    o.stop(ctx.currentTime + dur);
   }
 
   function onScanSuccess(decodedText) {
     const now = Date.now();
 
-    // check duplicate scan
+    // duplicate protection
     if (scanCache[decodedText] && (now - scanCache[decodedText]) < BLOCK_TIME) {
       document.getElementById("status").innerText =
-        "⏳ Already scanned. Try after 3 minutes.";
+        "⏳ Already scanned. Wait 3 minutes.";
+      beep(300, 0.3);
       return;
     }
 
-    // update cache
     scanCache[decodedText] = now;
 
-    document.getElementById("status").innerText = "Processing...";
-    beep(); // 🔊 beep on valid scan
+    // CASE 1: Seat QR
+    if (decodedText.startsWith("Seat:") && !decodedText.includes("|")) {
+      lockedSeat = decodedText.split(":")[1];
+      document.getElementById("status").innerText =
+        "🪑 Seat locked: " + lockedSeat;
+      beep(600, 0.1);
+      return;
+    }
+
+    // CASE 2: Tag QR
+    if (!lockedSeat) {
+      document.getElementById("status").innerText =
+        "❗ Scan seat QR first";
+      beep(250, 0.3);
+      return;
+    }
+
+    const parts = decodedText.split("|");
+    let tagSeat = "";
+
+    parts.forEach(p => {
+      const [k, v] = p.split(":");
+      if (k === "Seat") tagSeat = v;
+    });
+
+    if (tagSeat !== lockedSeat) {
+      document.getElementById("status").innerText =
+        `❌ Seat mismatch! Tag is ${tagSeat}, scanned on ${lockedSeat}`;
+      beep(200, 0.4);
+      lockedSeat = null; // reset
+      return;
+    }
+
+    // SUCCESS → send to backend
+    document.getElementById("status").innerText =
+      "✅ Seat verified & logged";
+    beep(900, 0.15);
 
     fetch(API_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: "qrdata=" + encodeURIComponent(decodedText)
-    })
-    .then(res => res.text())
-    .then(() => {
-      document.getElementById("status").innerText =
-        "✅ Seat Logged Successfully";
-    })
-    .catch(() => {
-      document.getElementById("status").innerText =
-        "❌ Error saving data";
     });
+
+    lockedSeat = null; // reset after success
   }
 
   new Html5Qrcode("reader").start(
