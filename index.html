@@ -73,8 +73,7 @@
     if (scanDisabled) return;
 
     // 🔥 IMPORTANT FIX (handles hidden spaces, encoding issues)
-    decodedText = decodedText.trim();
-
+    decodedText = decodeURIComponent(decodedText).trim();
     // =====================
     // STEP 1: SEAT QR SCAN
     // =====================
@@ -82,7 +81,7 @@
       lockedSeat = decodedText.split(":")[1].trim().toUpperCase();
 
       document.getElementById("status").innerText =
-        `Scan Seat QR\nSeat Number: ${lockedSeat} locked\nNow scan Reservation Tag`;
+        `Scan Seat QR\nSeat Number: ${lockedSeat} locked\nNow Scan Reservation Tag`;
 
       beep(600);
       disableScanTemporarily();
@@ -94,7 +93,7 @@
     // =====================
     if (!lockedSeat) {
       document.getElementById("status").innerText =
-        "Scan Seat QR first";
+        "Scan Seat QR First";
       beep(250, 0.3);
       disableScanTemporarily();
       return;
