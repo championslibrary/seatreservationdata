@@ -138,6 +138,20 @@
       <div class="box">
         <h3>Scan QR To Update Seat Reservation Data</h3>
         <div id="reader"></div>
+        <button id="torchBtn" onclick="toggleTorch()" style="
+  margin-top: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  display: none;
+">
+  🔦 Turn On Torch
+</button>
+
         <div class="status" id="status">Scan Seat QR First</div>
       </div>
     </div>
@@ -167,6 +181,24 @@
 
   let lockedSeat = null;
   let scanDisabled = false;
+
+    // 🔦 TORCH CONTROL
+  let torchOn = false;
+  let qr; // IMPORTANT: declare qr globally
+
+  function toggleTorch() {
+    if (!qr) return;
+
+    torchOn = !torchOn;
+
+    qr.applyVideoConstraints({
+      advanced: [{ torch: torchOn }]
+    });
+
+    document.getElementById("torchBtn").innerText =
+      torchOn ? "🔦 Turn Off Torch" : "🔦 Turn On Torch";
+  }
+
 
   function beep(freq = 800, dur = 0.15) {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -251,7 +283,21 @@
     disableScanTemporarily();
   }
 
-  new Html5Qrcode("reader").start(
+  const qr = new Html5Qrcode("reader");
+
+qr.start(
+  { facingMode: "environment" },
+  { fps: 10, qrbox: 250 },
+  onScanSuccess
+).then(() => {
+  // Check torch support
+  qr.getRunningTrackCapabilities().then(cap => {
+    if (cap.torch) {
+      document.getElementById("torchBtn").style.display = "inline-block";
+    }
+  });
+});
+
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     onScanSuccess
